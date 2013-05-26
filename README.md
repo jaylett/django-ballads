@@ -19,9 +19,15 @@ Coordinate multi-system transactions that can include database work, filesystem 
 
 There's a Django `transaction.atomic` wrapped up inside a ballad, and it will be rolled back *before* any compensating transactions.
 
-An exception raised within the ballad block will appear out the top, unless there are exceptions during rollback in which case you'll get a `BalladException` which wraps both the rollback exceptions and any exception that caused the rollback. (The special `BalladRollback` exception will be ignored. You can also ignore exceptions raised during rollback by setting `ignore_rollback_exceptions` when constructing the `Ballad`.)
-
 Right now we don't support wrapping multiple different database transactions into a ballad, although you can often just nest `with transaction.atomic()` clauses suitably.
+
+## Rollbacks
+
+    with Ballad() as ballad:
+        orm_obj1 = db_operations()
+        ballad.rollback()
+
+An exception raised within the ballad block will appear out the top, unless there are exceptions during rollback in which case you'll get a `BalladException` which wraps both the rollback exceptions and any exception that caused the rollback. (The special `BalladRollback` exception will be ignored. You can also ignore exceptions raised during rollback by setting `ignore_rollback_exceptions` when constructing the `Ballad`.)
 
 ## Requirements
 
