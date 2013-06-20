@@ -2,3 +2,5 @@
 *.pyc
 .coverage
 htmlcov
+dist
+django_ballads.egg-info
