@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, IntegrityError
 from django.test import TransactionTestCase
 from django_ballads import Ballad, BalladException
 import os
@@ -27,6 +27,26 @@ class TestCompensatingActions(TransactionTestCase):
         with Ballad() as ballad:
             t = TestModel.objects.create(unique=1)
         self.assertEqual(1, TestModel.objects.count())
+
+    def test_db_integrity_error_rollback(self):
+        """Integrity error is recovered within the ballad."""
+        # if commit_on_success (under Django < 1.6) or atomic (1.6+)
+        # didn't actually work properly, or we invoked them incorrectly
+        # when we wrap the context manager, we might end up with a
+        # non-functional database connection under postgresql (you must
+        # roll back after an IntegrityError).
+        t = TestModel.objects.create(unique=1)
+
+        try:
+            with Ballad() as ballad:
+                t = TestModel.objects.create(unique=1)
+            self.fail("Should have raised an IntegrityError out of the ballad.")
+        except IntegrityError as e:
+            pass
+        # test both DML and DQL to ensure we're still good
+        self.assertEqual(1, TestModel.objects.count())
+        TestModel.objects.create(unique=2)
+        self.assertEqual(2, TestModel.objects.count())
 
     def test_db_filesystem_rollback(self):
         """A ballad rollback runs compensating actions."""
