@@ -30,6 +30,20 @@ class TestCompensatingActions(TransactionTestCase):
         self.assertEqual(1, TestModel.objects.count())
         self.assertFalse(ballad.rolled_back)
 
+    def test_db_exception_causes_rollback(self):
+        """An exception causes ballad rollback, which rolls back its db transaction."""
+        try:
+            with Ballad() as ballad:
+                t = TestModel.objects.create(unique=1)
+                raise ValueError
+            self.fail("Should have raised ValueError")
+        except ValueError:
+            pass
+        except:
+            self.fail("Raised non-ValueError")
+        self.assertEqual(0, TestModel.objects.count())
+        self.assertTrue(ballad.rolled_back)
+
     def test_db_integrity_error_rollback(self):
         """Integrity error is recovered within the ballad."""
         # if commit_on_success (under Django < 1.6) or atomic (1.6+)
