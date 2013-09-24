@@ -29,6 +29,8 @@ Right now we don't support wrapping multiple different database transactions int
 
 An exception raised within the ballad block will appear out the top, unless there are exceptions during rollback in which case you'll get a `BalladException` which wraps both the rollback exceptions and any exception that caused the rollback. (The special `BalladRollback` exception will be ignored. You can also ignore exceptions raised during rollback by setting `ignore_rollback_exceptions` when constructing the `Ballad`.)
 
+If a ballad is rolled back, either explicitly or implicitly, `ballad.rolled_back` will be `True`.
+
 ## Requirements
 
 This is really intended for use with Django 1.6 and up, although you may be able to use Django 1.5's older support with some databases. Tested on 1.5.1 and pre-1.6 with sqlite3 and postgresql.

@@ -34,6 +34,7 @@ class Ballad(object):
     def __init__(self, using=None, ignore_rollback_exceptions=False):
         self.atomic = atomic(using=using)
         self.compensations = []
+        self.rolled_back = False
         self.ignore_rollback_exceptions = ignore_rollback_exceptions
 
     def __enter__(self):
@@ -61,6 +62,7 @@ class Ballad(object):
                     compensation()
                 except Exception as e:
                     exceptions.append(e)
+            self.rolled_back = True
 
         if len(exceptions) > 0 and not self.ignore_rollback_exceptions:
             # wrap them up in a BalladException, including the

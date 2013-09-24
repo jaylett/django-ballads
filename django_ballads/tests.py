@@ -21,12 +21,14 @@ class TestCompensatingActions(TransactionTestCase):
             t = TestModel.objects.create(unique=1)
             ballad.rollback()
         self.assertEqual(0, TestModel.objects.count())
+        self.assertTrue(ballad.rolled_back)
 
     def test_db(self):
         """A ballad that isn't rolled back commits its db transaction."""
         with Ballad() as ballad:
             t = TestModel.objects.create(unique=1)
         self.assertEqual(1, TestModel.objects.count())
+        self.assertFalse(ballad.rolled_back)
 
     def test_db_integrity_error_rollback(self):
         """Integrity error is recovered within the ballad."""
@@ -47,6 +49,7 @@ class TestCompensatingActions(TransactionTestCase):
         self.assertEqual(1, TestModel.objects.count())
         TestModel.objects.create(unique=2)
         self.assertEqual(2, TestModel.objects.count())
+        self.assertTrue(ballad.rolled_back)
 
     def test_db_filesystem_rollback(self):
         """A ballad rollback runs compensating actions."""
@@ -66,6 +69,7 @@ class TestCompensatingActions(TransactionTestCase):
         finally:
             if os.path.exists(fname):
                 os.unlink(fname)
+        self.assertTrue(ballad.rolled_back)
 
     def test_db_filesystem(self):
         """A ballad that isn't rolled back does not run compensating actions."""
@@ -82,6 +86,7 @@ class TestCompensatingActions(TransactionTestCase):
         self.assertTrue(os.path.exists(fname))
         self.assertEqual(1, TestModel.objects.count())
         os.unlink(fname)
+        self.assertFalse(ballad.rolled_back)
 
     def test_compensation_exception(self):
         """Exceptions in rollback get reported specially."""
@@ -94,6 +99,7 @@ class TestCompensatingActions(TransactionTestCase):
             self.assertEqual(None, e.cause)
         except Exception as e:
             self.fail("Unexpected exception %s" % e)
+        self.assertTrue(ballad.rolled_back)
 
     def test_suppress_compensation_exceptions(self):
         """Exceptions in rollback can be suppressed."""
@@ -105,6 +111,7 @@ class TestCompensatingActions(TransactionTestCase):
             self.fail("BalladException was not been suppressed.")
         except Exception as e:
             self.fail("Unexpected exception %s" % e)
+        self.assertTrue(ballad.rolled_back)
 
     def test_exception_in_block(self):
         """Exceptions in the ballad are raised normally."""
@@ -115,6 +122,7 @@ class TestCompensatingActions(TransactionTestCase):
             pass
         except Exception as e:
             self.fail("Unexpected exception %s" % e)
+        self.assertTrue(ballad.rolled_back)
 
     def test_exception_in_block_and_suppressed_compensation_exceptions(self):
         """Exceptions in the ballad are raised normally."""
@@ -128,6 +136,7 @@ class TestCompensatingActions(TransactionTestCase):
             self.fail("BalladException was not been suppressed.")
         except Exception as e:
             self.fail("Unexpected exception %s" % e)
+        self.assertTrue(ballad.rolled_back)
 
     def test_exception_in_block_and_compensation_exceptions(self):
         """Exceptions in the ballad are bundled with rollback exceptions."""
@@ -143,6 +152,7 @@ class TestCompensatingActions(TransactionTestCase):
             self.fail("Unbundled ballad exception raised.")
         except Exception as e:
             self.fail("Unexpected exception %s" % e)
+        self.assertTrue(ballad.rolled_back)
 
 
 class TestExplicitStanza(TransactionTestCase):
@@ -157,6 +167,7 @@ class TestExplicitStanza(TransactionTestCase):
             ballad.rollback()
 
         self.assertEqual(0, len(test_list))
+        self.assertTrue(ballad.rolled_back)
 
     def test_changing_stanza(self):
         test_list = []
@@ -168,6 +179,7 @@ class TestExplicitStanza(TransactionTestCase):
             ballad.rollback()
 
         self.assertEqual(2, len(test_list))
+        self.assertTrue(ballad.rolled_back)
 
     def test_stanza_causes_rollback(self):
         test_list = []
@@ -178,3 +190,4 @@ class TestExplicitStanza(TransactionTestCase):
                 ballad.rollback()
 
         self.assertEqual(0, len(test_list))
+        self.assertTrue(ballad.rolled_back)
