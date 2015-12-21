@@ -1,5 +1,6 @@
 from django.db import models, IntegrityError
 from django.test import TransactionTestCase
+from django.utils.encoding import smart_bytes
 from django_ballads import Ballad, BalladException
 import os
 import os.path
@@ -71,7 +72,7 @@ class TestCompensatingActions(TransactionTestCase):
         with Ballad() as ballad:
             f = tempfile.NamedTemporaryFile(delete=False)
             fname = f.name
-            f.write("hi there")
+            f.write(smart_bytes("hi there"))
             f.close()
             ballad.compensation(lambda: os.unlink(fname))
 
@@ -91,7 +92,7 @@ class TestCompensatingActions(TransactionTestCase):
         with Ballad() as ballad:
             f = tempfile.NamedTemporaryFile(delete=False)
             fname = f.name
-            f.write("hi there")
+            f.write(smart_bytes("hi there"))
             f.close()
             ballad.compensation(lambda: os.unlink(fname))
 

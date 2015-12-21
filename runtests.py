@@ -1,5 +1,8 @@
+from __future__ import print_function
 import sys
+import django
 from django.conf import settings
+from django.test.utils import get_runner
 
 DATABASES = {
     'postgresql': {
@@ -24,6 +27,8 @@ settings.configure(
         'default': DATABASES['sqlite3'],
     },
 )
+django.setup()
+TestRunner = get_runner(settings)
 
 # after we have some settings
 from django.test.utils import override_settings
@@ -31,10 +36,9 @@ from django.test.utils import override_settings
 def run_against(db):
     @override_settings(DATABASES = { 'default': DATABASES[db] })
     def run_tests():
-        print "Running tests against %s database." % db
+        print ("Running tests against %s database." % db)
 
-        from django.test.simple import DjangoTestSuiteRunner
-        test_runner = DjangoTestSuiteRunner(verbosity=1, failfast=False)
+        test_runner = TestRunner(verbosity=1, failfast=False)
         failures = test_runner.run_tests(['django_ballads', ])
         if failures:
             sys.exit(failures)
